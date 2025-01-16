@@ -10,11 +10,12 @@ from joblib import Parallel, delayed
 import warnings
 from Bio import BiopythonDeprecationWarning
 
+import os
+import sys
+from pathlib import Path
+
 warnings.filterwarnings("ignore", category=BiopythonDeprecationWarning)
 pythia_root_dpath = os.path.dirname(os.path.abspath(__file__))
-
-
-
 
 def get_torch_model(ckpt_path, device='cuda'):
     model = AMPNN(
@@ -25,7 +26,7 @@ def get_torch_model(ckpt_path, device='cuda'):
         layer_nums = 3,
         token_num = 21,
     )
-    model.load_state_dict(torch.load(ckpt_path, map_location=torch.device(device)))
+    model.load_state_dict(torch.load(ckpt_path, map_location=torch.device(device),weights_only=True))
     model.eval()
     model.to(device)
     return model
@@ -92,8 +93,8 @@ def main(args):
     torch_model_p = get_torch_model(os.path.join(pythia_root_dpath, "../pythia-p.pt"), device)
 
     if run_dir:
-        files = glob.glob(f'{input_dir}*.pdb')
-        print(len(files))
+        files = glob.glob(os.path.join(input_dir, "*.pdb")) + glob.glob(os.path.join(input_dir, "*.pdb.gz"))
+        print(f"Found {len(files)} PDB files")
         if check_plddt:
             confident_list = []
             for pdb_file in tqdm(files):
